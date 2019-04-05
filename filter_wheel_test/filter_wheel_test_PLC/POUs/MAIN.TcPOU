@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="MAIN" Id="{1e57a20e-abc8-4724-b740-d22e8c3d8d13}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	fbEL6001 : FB_SerialCom;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbEL6001(TxBuffer:=GVL.TxBufferEL, RxBuffer:=GVL.RxBufferEL);]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

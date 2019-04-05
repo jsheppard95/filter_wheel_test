@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_SerialCom" Id="{1709bd62-5b3d-48ab-a1a1-083fae30a95e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SerialCom
+VAR_IN_OUT
+	TxBuffer : ComBuffer;
+	RxBuffer : ComBuffer;
+END_VAR
+VAR
+	Timer		: TON := (PT:=T#1S); (* time to pass before Q is set to TRUE *)
+	fbSend		: SendString;
+	bSendBusy	: BOOL;
+	eSendErrorID: ComError_t;
+	fbClearComBuffer : ClearComBuffer;
+	fbReceive		: ReceiveString;
+	sReceivedString	: STRING;
+	sLastReceivedString: STRING;
+	bStringReceived	: BOOL;
+	bReceiveBusy	: BOOL;
+	bReceiveError	: BOOL;
+	eReceiveErrorID	: ComError_t;
+	bReceiveTimeout	: BOOL;
+	nReceiveCounter	: UDINT;
+	sStringToSend : STRING;
+	sCmd : STRING := '*idn?';
+	fbFormatString : FB_FormatString;
+	sResponse : STRING;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Add carriage return ($R) to input command
+fbFormatString( sFormat := '%s$R',
+	            arg1:= F_STRING(sCmd),
+                sOut=> sStringToSend );
+// Call the send block every second to repeat the transmission.
+// Also call the block as long as it is busy to finish a transmission.
+Timer(IN:=TRUE);
+IF Timer.Q OR fbSend.Busy THEN
+	Timer(IN:=FALSE); (* reset timer *)
+	fbSend(	SendString:= sStringToSend,
+			TXbuffer:= TxBuffer,
+			Busy=> bSendBusy,
+			Error=> );
+	IF fbSend.Error <> COMERROR_NOERROR THEN
+		eSendErrorID := fbSend.Error;
+	END_IF
+END_IF
+
+//	Receive string data:
+//	The block receives any data strings beginning with a STX ($02) and ending with an ETX ($03) character.	
+fbReceive(
+	Prefix:= '',
+	Suffix:= '$R',
+	Timeout:= T#1S,
+	ReceivedString:= sReceivedString,
+	RXbuffer:= RxBuffer,
+	StringReceived=> bStringReceived,
+	Busy=> bReceiveBusy,
+	Error=> ,
+	RxTimeout=> bReceiveTimeout );
+IF fbReceive.Error <> COMERROR_NOERROR THEN
+	eReceiveErrorID := fbReceive.Error;
+END_IF
+
+IF bStringReceived THEN
+	nReceiveCounter := nReceiveCounter + 1;
+	// Only save the response if it is not the original sent command
+	IF FIND(sReceivedString, sStringToSend)=0 THEN
+		sResponse := sReceivedString;
+		// Remove the Carriage return - Rememeber $R is 1 character!
+		sResponse := DELETE(sResponse, 1, LEN(sResponse));
+	END_IF
+	sLastReceivedString := sReceivedString;
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_SerialCom">
+      <LineId Id="123" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="27" Count="11" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="40" Count="14" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="55" Count="1" />
+      <LineId Id="130" Count="0" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="131" Count="1" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="57" Count="2" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
