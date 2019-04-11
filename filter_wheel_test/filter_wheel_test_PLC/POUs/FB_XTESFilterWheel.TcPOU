@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_XTESFilterWheel" Id="{c5737b2b-f086-4fe9-822d-556ef768ace3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_XTESFilterWheel
+VAR_INPUT
+	bExecute: BOOL;
+	sTestCmd: STRING;
+END_VAR
+VAR_IN_OUT
+	(* 	I/O variables for a EL6001 terminal*)
+	stIn_EL6001 : EL6inData22B;
+	stOut_EL6001 : EL6outData22B;
+	nSetPos: USINT;
+END_VAR
+VAR_OUTPUT
+	nGetPos: USINT;
+	bBusy: BOOL;
+	bError: BOOL;
+	sError: STRING;
+	sTestResponse: STRING;
+END_VAR
+VAR
+	fbCom: FB_XTESFilterWheelCom;
+	nStep: USINT;
+	sLastTestCmd: STRING;
+	bIsTest: BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bExecute AND nStep = 0 THEN
+	nStep := 10;
+ELSIF NOT bExecute THEN
+	nStep := 0;
+END_IF
+
+CASE nStep OF
+	0:
+		; // idle
+	10: 
+		// Get position
+		bIsTest := FALSE;
+		fbCom(sCmd:='pos?',
+			bSend:=TRUE,
+			stIn_EL6001:=stIn_EL6001,
+			stOut_EL6001:=stOut_EL6001);
+		nStep := nStep + 10;
+	20:
+		// Wait for response and set variables
+		fbCom(stIn_EL6001:=stIn_EL6001,
+			stOut_EL6001:=stOut_EL6001);
+		IF fbCom.bDone THEN
+			nGetPos := STRING_TO_USINT(fbCom.sResponse);
+			nSetPos := nGetPos;
+			sError := fbCom.sError;
+			nStep := nStep + 10;
+		END_IF
+	30:
+		// Wait for a move request
+		IF nSetPos <> nGetPos THEN
+			fbCom(sCmd:=CONCAT('pos=', USINT_TO_STRING(nSetPos)),
+				bSend:=TRUE,
+				stIn_EL6001:=stIn_EL6001,
+				stOut_EL6001:=stOut_EL6001);
+			nStep := nStep + 10;
+			bBusy := TRUE;	
+		// Alternatively, wait for the raw test commands
+		ELSIF sTestCmd <> sLastTestCmd THEN
+			fbCom(sCmd:=sTestCmd,
+				bSend:=TRUE,
+				stIn_EL6001:=stIn_EL6001,
+				stOut_EL6001:=stOut_EL6001);
+			nStep := nStep + 10;
+			bBusy := TRUE;	
+			bIsTest := TRUE;
+			sLastTestCmd := sTestCmd;
+		END_IF
+	40:
+		fbCom(stIn_EL6001:=stIn_EL6001,
+			stOut_EL6001:=stOut_EL6001);
+		// Wait for move to be done
+		IF fbCom.bDone THEN
+			bBusy := FALSE;
+			nStep := 10;
+			IF bIsTest THEN
+				sTestResponse := fbCom.sResponse;
+			END_IF
+		END_IF
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="FB_XTESFilterWheel">
+      <LineId Id="30" Count="0" />
+      <LineId Id="32" Count="1" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="18" Count="2" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="35" Count="1" />
+      <LineId Id="66" Count="1" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="21" Count="1" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="145" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="44" Count="3" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="130" Count="4" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="72" Count="1" />
+      <LineId Id="53" Count="1" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="141" Count="2" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

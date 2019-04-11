@@ -3,12 +3,36 @@
   <POU Name="MAIN" Id="{1e57a20e-abc8-4724-b740-d22e8c3d8d13}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
-	fbEL6001 : FB_SerialCom;
+	fbFilterWheel : FB_XTESFilterWheel;
+	bExecute: BOOL;
+	sTestCmd: STRING;
+	nSetPos: USINT;
+	nGetPos: USINT;
+	bBusy: BOOL;
+	sTestResponse: STRING;
+	sError: STRING;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[fbEL6001(TxBuffer:=GVL.TxBufferEL, RxBuffer:=GVL.RxBufferEL);]]></ST>
+      <ST><![CDATA[fbFilterWheel(bExecute:=bExecute,
+	sTestCmd:=sTestCmd,
+	stIn_EL6001:=GVL.stIn_EL6001,
+	stOut_EL6001:=GVL.stOut_EL6001,
+	nSetPos:=nSetPos,
+	nGetPos=>nGetPos,
+	bBusy=>bBusy,
+	bError=>,
+	sError=>sError,
+	sTestResponse=>sTestResponse);]]></ST>
     </Implementation>
     <LineIds Name="MAIN">
+      <LineId Id="60" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="29" Count="1" />
+      <LineId Id="61" Count="0" />
       <LineId Id="2" Count="0" />
     </LineIds>
   </POU>

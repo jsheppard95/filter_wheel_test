@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_XTESFilterWheelCom" Id="{1709bd62-5b3d-48ab-a1a1-083fae30a95e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_XTESFilterWheelCom
+VAR_INPUT
+	sCmd : STRING;
+	bSend : BOOL;
+END_VAR
+VAR_IN_OUT
+	(* 	I/O variables for a EL6001 terminal*)
+	stIn_EL6001 : EL6inData22B;
+	stOut_EL6001 : EL6outData22B;
+END_VAR
+VAR_OUTPUT
+	sResponse : STRING;
+	sError : STRING;
+	bDone : BOOL;
+END_VAR
+VAR
+	// Communication Buffers
+	TxBuffer : ComBuffer;
+	RxBuffer : ComBuffer;
+	fbClearComBuffer: ClearComBuffer;
+
+	// Parameters for PLC -> EL6001
+	fbEL6001Ctrl		: SerialLineControl;
+	bEL6001CtrlError	: BOOL;
+	eEL6001CtrlErrorID	: ComError_t;
+
+	// Parameters for EL6001 -> FW
+	Timer		: TON := (PT:=T#1S); (* time to pass before Q is set to TRUE *)
+	fbSend		: SendString;
+	bSendBusy	: BOOL;
+	eSendErrorID: ComError_t;
+	fbReceive		: ReceiveString;
+	sReceivedString	: STRING;
+	sLastReceivedString: STRING;
+	bStringReceived	: BOOL;
+	bReceiveBusy	: BOOL;
+	bReceiveError	: BOOL;
+	eReceiveErrorID	: ComError_t;
+	bReceiveTimeout	: BOOL;
+	nReceiveCounter	: UDINT;
+	nSendCounter : UDINT;
+	sStringToSend : STRING;
+
+	fbFormatString : FB_FormatString;
+
+	// Parameters for state-machine implementation
+	nStep : INT := 0;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Start Communicating with EL6001
+fbEL6001Ctrl(
+	Mode:= SERIALLINEMODE_EL6_22B, 
+	pComIn:= ADR(stIn_EL6001), 
+	pComOut:= ADR(stOut_EL6001), 
+	SizeComIn:= SIZEOF(stIn_EL6001), 
+	Error=> , 
+	ErrorID=> , 
+	TxBuffer:= TxBuffer, 
+	RxBuffer:= RxBuffer );
+IF fbEL6001Ctrl.Error THEN
+	bEL6001CtrlError := TRUE;
+	eEL6001CtrlErrorID := fbEL6001Ctrl.ErrorID;
+END_IF
+
+IF bSend THEN
+	nStep := 10;
+	bSend := FALSE;
+	bDone := FALSE;
+END_IF
+
+// Attempt at solution that sends one command at a time, not on constant loop
+CASE nStep OF
+	0:
+		; // idle
+	10:
+		// Clear buffers in case any lingering data
+		fbClearComBuffer(Buffer:=TxBuffer);
+		fbClearComBuffer(Buffer:=RxBuffer);
+		// Prepare string to send
+		sStringToSend := CONCAT(sCmd, '$R');
+		// Clear the error from the last response
+//		sError := '';
+		// Send string
+		fbSend(	SendString:= sStringToSend,
+				TXbuffer:= TxBuffer,
+				Busy=> bSendBusy,
+				Error=> );
+		IF fbSend.Error <> COMERROR_NOERROR THEN
+			eSendErrorID := fbSend.Error;
+		ELSE
+			nSendCounter := nSendCounter + 1;
+		END_IF
+		nStep := nStep + 10;
+	20:
+		// Finish sending String
+		IF fbSend.Busy THEN
+			fbSend(	SendString:= sStringToSend,
+					TXbuffer:= TxBuffer,
+					Busy=> bSendBusy,
+					Error=> );
+			IF fbSend.Error <> COMERROR_NOERROR THEN
+				eSendErrorID := fbSend.Error;
+			ELSE
+				nSendCounter := nSendCounter + 1;
+			END_IF
+		ELSE
+			nStep := nStep + 10;
+		END_IF
+	30:
+		// Get Reply
+		fbReceive(
+			Prefix:= '',
+			Suffix:= '$R',
+			Timeout:= T#100MS,
+			ReceivedString:= sReceivedString,
+			RXbuffer:= RxBuffer,
+			StringReceived=> bStringReceived,
+			Busy=> bReceiveBusy,
+			Error=> ,
+			RxTimeout=> bReceiveTimeout );
+		IF fbReceive.Error <> COMERROR_NOERROR THEN
+			eReceiveErrorID := fbReceive.Error;
+		END_IF
+
+		IF bStringReceived THEN
+			nReceiveCounter := nReceiveCounter + 1;
+			// Check for response
+			IF FIND(sReceivedString, sStringToSend)=0 THEN
+				sResponse := sReceivedString;
+				bDone := TRUE;
+				nStep := 0;
+				// Save the error message if we get one
+				IF FIND(sResponse, 'Command error CMD_ARG_INVALID$N$R') = 1 THEN
+					sError := sResponse;
+				END_IF
+			END_IF
+		END_IF
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="FB_XTESFilterWheelCom">
+      <LineId Id="284" Count="0" />
+      <LineId Id="272" Count="11" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="453" Count="0" />
+      <LineId Id="455" Count="0" />
+      <LineId Id="457" Count="0" />
+      <LineId Id="459" Count="0" />
+      <LineId Id="456" Count="0" />
+      <LineId Id="454" Count="0" />
+      <LineId Id="353" Count="2" />
+      <LineId Id="359" Count="1" />
+      <LineId Id="646" Count="2" />
+      <LineId Id="364" Count="0" />
+      <LineId Id="470" Count="0" />
+      <LineId Id="662" Count="1" />
+      <LineId Id="365" Count="0" />
+      <LineId Id="367" Count="3" />
+      <LineId Id="471" Count="1" />
+      <LineId Id="552" Count="1" />
+      <LineId Id="473" Count="0" />
+      <LineId Id="371" Count="0" />
+      <LineId Id="535" Count="0" />
+      <LineId Id="373" Count="2" />
+      <LineId Id="377" Count="2" />
+      <LineId Id="474" Count="1" />
+      <LineId Id="554" Count="1" />
+      <LineId Id="476" Count="0" />
+      <LineId Id="380" Count="1" />
+      <LineId Id="376" Count="0" />
+      <LineId Id="382" Count="11" />
+      <LineId Id="477" Count="2" />
+      <LineId Id="643" Count="0" />
+      <LineId Id="395" Count="1" />
+      <LineId Id="650" Count="0" />
+      <LineId Id="398" Count="0" />
+      <LineId Id="400" Count="0" />
+      <LineId Id="460" Count="1" />
+      <LineId Id="653" Count="3" />
+      <LineId Id="547" Count="0" />
+      <LineId Id="397" Count="0" />
+      <LineId Id="585" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

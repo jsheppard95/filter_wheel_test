@@ -22,16 +22,13 @@
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\BackgroundEL.TcPOU">
+    <Compile Include="POUs\FB_XTESFilterWheel.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\FB_SerialCom.TcPOU">
+    <Compile Include="POUs\FB_XTESFilterWheelCom.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\MAIN.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="SerialComTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
