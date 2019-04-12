@@ -13,8 +13,10 @@ VAR_IN_OUT
 END_VAR
 VAR_OUTPUT
 	sResponse : STRING;
-	sError : STRING;
 	bDone : BOOL;
+	eSerialLineErrorID : ComError_t;
+	eSendErrorID : ComError_t;
+	eRecvErrorID : ComError_t;
 END_VAR
 VAR
 	// Communication Buffers
@@ -31,7 +33,7 @@ VAR
 	Timer		: TON := (PT:=T#1S); (* time to pass before Q is set to TRUE *)
 	fbSend		: SendString;
 	bSendBusy	: BOOL;
-	eSendErrorID: ComError_t;
+	eLastSendErrorID: ComError_t;
 	fbReceive		: ReceiveString;
 	sReceivedString	: STRING;
 	sLastReceivedString: STRING;
@@ -57,7 +59,7 @@ fbEL6001Ctrl(
 	pComOut:= ADR(stOut_EL6001), 
 	SizeComIn:= SIZEOF(stIn_EL6001), 
 	Error=> , 
-	ErrorID=> , 
+	ErrorID=> eSerialLineErrorID, 
 	TxBuffer:= TxBuffer, 
 	RxBuffer:= RxBuffer );
 IF fbEL6001Ctrl.Error THEN
@@ -87,9 +89,9 @@ CASE nStep OF
 		fbSend(	SendString:= sStringToSend,
 				TXbuffer:= TxBuffer,
 				Busy=> bSendBusy,
-				Error=> );
+				Error=> eSendErrorID);
 		IF fbSend.Error <> COMERROR_NOERROR THEN
-			eSendErrorID := fbSend.Error;
+			eLastSendErrorID := fbSend.Error;
 		ELSE
 			nSendCounter := nSendCounter + 1;
 		END_IF
@@ -100,9 +102,9 @@ CASE nStep OF
 			fbSend(	SendString:= sStringToSend,
 					TXbuffer:= TxBuffer,
 					Busy=> bSendBusy,
-					Error=> );
+					Error=> eSendErrorID);
 			IF fbSend.Error <> COMERROR_NOERROR THEN
-				eSendErrorID := fbSend.Error;
+				eLastSendErrorID := fbSend.Error;
 			ELSE
 				nSendCounter := nSendCounter + 1;
 			END_IF
@@ -119,7 +121,7 @@ CASE nStep OF
 			RXbuffer:= RxBuffer,
 			StringReceived=> bStringReceived,
 			Busy=> bReceiveBusy,
-			Error=> ,
+			Error=> eRecvErrorID,
 			RxTimeout=> bReceiveTimeout );
 		IF fbReceive.Error <> COMERROR_NOERROR THEN
 			eReceiveErrorID := fbReceive.Error;
@@ -132,10 +134,6 @@ CASE nStep OF
 				sResponse := sReceivedString;
 				bDone := TRUE;
 				nStep := 0;
-				// Save the error message if we get one
-				IF FIND(sResponse, 'Command error CMD_ARG_INVALID$N$R') = 1 THEN
-					sError := sResponse;
-				END_IF
 			END_IF
 		END_IF
 END_CASE]]></ST>
@@ -178,7 +176,6 @@ END_CASE]]></ST>
       <LineId Id="398" Count="0" />
       <LineId Id="400" Count="0" />
       <LineId Id="460" Count="1" />
-      <LineId Id="653" Count="3" />
       <LineId Id="547" Count="0" />
       <LineId Id="397" Count="0" />
       <LineId Id="585" Count="0" />
