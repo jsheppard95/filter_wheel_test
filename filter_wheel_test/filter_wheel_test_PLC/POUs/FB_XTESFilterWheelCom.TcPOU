@@ -83,8 +83,6 @@ CASE nStep OF
 		fbClearComBuffer(Buffer:=RxBuffer);
 		// Prepare string to send
 		sStringToSend := CONCAT(sCmd, '$R');
-		// Clear the error from the last response
-//		sError := '';
 		// Send string
 		fbSend(	SendString:= sStringToSend,
 				TXbuffer:= TxBuffer,
@@ -153,7 +151,6 @@ END_CASE]]></ST>
       <LineId Id="646" Count="2" />
       <LineId Id="364" Count="0" />
       <LineId Id="470" Count="0" />
-      <LineId Id="662" Count="1" />
       <LineId Id="365" Count="0" />
       <LineId Id="367" Count="3" />
       <LineId Id="471" Count="1" />

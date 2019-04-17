@@ -11,6 +11,10 @@ VAR_IN_OUT
 	(* 	I/O variables for a EL6001 terminal*)
 	stIn_EL6001 : EL6inData22B;
 	stOut_EL6001 : EL6outData22B;
+	{attribute 'pytmc' := '
+		pv: SETPOS
+		io: o
+	'}
 	nSetPos: USINT;
 END_VAR
 VAR_OUTPUT
@@ -22,6 +26,10 @@ VAR_OUTPUT
 	bBusy: BOOL;
 	bError: BOOL;
 	sError: STRING;
+	{attribute 'pytmc' := '
+		pv: ERROR
+		io: i
+	'}
 	sLastError: STRING;
 	sErrorTS: STRING;
 	sTestResponse: STRING;
