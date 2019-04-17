@@ -5,6 +5,7 @@
 VAR
 	{attribute 'pytmc' := '
 		pv: TEST:FILTERWHEEL
+		io: io
 	'}
 	fbFilterWheel : FB_XTESFilterWheel;
 	bExecute: BOOL;
